@@ -40,12 +40,21 @@ function el(tag, attrs, kids) {
   return n;
 }
 
+/* Pokazywanie i ukrywanie nie może zależeć wyłącznie od arkusza stylów.
+   Ustawiamy i atrybut `hidden`, i `style.display` — wtedy strona zachowuje się
+   poprawnie nawet przy niewczytanym albo starym CSS (patrz: cache GitHub Pages). */
+function setShown(node, on) {
+  if (!node) return;
+  node.hidden = !on;
+  node.style.display = on ? '' : 'none';
+}
+
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;
-  t.hidden = false;
+  setShown(t, true);
   clearTimeout(t._t);
-  t._t = setTimeout(() => { t.hidden = true; }, 2600);
+  t._t = setTimeout(() => setShown(t, false), 2600);
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -90,13 +99,13 @@ function lintHits(text) {
   return forbidden().filter(w => t.includes(w.toLowerCase()));
 }
 function lintNode(getText) {
-  const box = el('div', { class: 'lint', hidden: true });
+  const box = el('div', { class: 'lint', hidden: true, style: 'display:none' });
   const upd = () => {
     const hits = lintHits(getText());
     if (hits.length) {
       box.innerHTML = 'Słowa z listy <b>NIE UŻYWAMY</b>: ' + hits.map(h => '„' + h + '”').join(', ');
-      box.hidden = false;
-    } else box.hidden = true;
+      setShown(box, true);
+    } else setShown(box, false);
   };
   box._upd = upd;
   upd();
@@ -197,7 +206,7 @@ function renderNav() {
   }
 }
 
-function closeNav() { $('#nav').dataset.open = '0'; $('#nav-scrim').hidden = true; }
+function closeNav() { $('#nav').dataset.open = '0'; setShown($('#nav-scrim'), false); }
 
 /* =========================================================
    Pola
@@ -516,7 +525,7 @@ function ideasEditor(f) {
       box.appendChild(el('p', { class: 'idea__prob', text: '„' + p.text.trim() + '”' }));
       if (p.cost) box.appendChild(el('p', { class: 'field__sub', text: 'Koszt zaniechania: ' + p.cost }));
 
-      const cutFlag = el('p', { class: 'idea__cut', text: 'Brak unikalnego rozwiązania — do wycięcia z mapy', hidden: true });
+      const cutFlag = el('p', { class: 'idea__cut', text: 'Brak unikalnego rozwiązania — do wycięcia z mapy', hidden: true, style: 'display:none' });
       box.appendChild(cutFlag);
 
       const mk = (key, q, sub, rows, lint) => {
@@ -526,7 +535,7 @@ function ideasEditor(f) {
         n.addEventListener('input', () => {
           o[key] = n.value; touch();
           if (lnode) lnode._upd();
-          cutFlag.hidden = String(o.rozwiazanie || '').trim().length > 2;
+          setShown(cutFlag, String(o.rozwiazanie || '').trim().length <= 2);
           if (key === 'katy') counter.textContent = 'Kątów w tej Idei: ' + String(n.value).split('\n').filter(s => s.trim().length > 2).length;
           scheduleSoftRefresh();
         });
@@ -546,7 +555,7 @@ function ideasEditor(f) {
 
       const counter = el('p', { class: 'idea__count', text: 'Kątów w tej Idei: ' + String(o.katy || '').split('\n').filter(s => s.trim().length > 2).length });
       box.appendChild(counter);
-      cutFlag.hidden = String(o.rozwiazanie || '').trim().length > 2;
+      setShown(cutFlag, String(o.rozwiazanie || '').trim().length <= 2);
       host.appendChild(box);
     });
 
@@ -900,8 +909,9 @@ function buildPrint() {
    Start
    ========================================================= */
 function openApp() {
-  $('#gate').hidden = true;
-  $('#app').hidden = false;
+  setShown($('#lock'), false);
+  setShown($('#gate'), false);
+  setShown($('#app'), true);
   $('#topbar-client').textContent = nz(D().klient) || '—';
   current = 0;
   // wejdź w pierwszy niegotowy moduł
@@ -929,23 +939,27 @@ function isUnlocked() {
 }
 
 function showGate() {
-  const lock = $('#lock');
-  if (lock) lock.hidden = true;
-  $('#gate').hidden = false;
+  setShown($('#lock'), false);
+  setShown($('#gate'), true);
+  setShown($('#app'), false);
 }
 
 function wireLock() {
   const lock = $('#lock');
-  if (!lock) { $('#gate').hidden = false; return; }
+  setShown($('#app'), false);
 
+  if (!lock) { setShown($('#gate'), true); return; }
   if (isUnlocked()) { showGate(); return; }
 
+  setShown($('#gate'), false);
+
   const form = $('#lock-form'), pin = $('#lock-pin'), err = $('#lock-err'), rem = $('#lock-remember');
+  setShown(err, false);
   setTimeout(() => pin.focus(), 150);
 
   pin.addEventListener('input', () => {
     pin.value = pin.value.replace(/\D/g, '').slice(0, 8);
-    err.hidden = true;
+    setShown(err, false);
   });
 
   form.addEventListener('submit', async e => {
@@ -957,7 +971,7 @@ function wireLock() {
       return;
     }
     if (h !== PIN_HASH) {
-      err.hidden = false;
+      setShown(err, true);
       pin.value = '';
       pin.focus();
       return;
@@ -1023,8 +1037,8 @@ function importFile(input, fromGate) {
 function wireApp() {
   // menu
   const btn = $('#menu-btn'), list = $('#menu-list');
-  const closeMenu = () => { list.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-  const openMenu = () => { list.hidden = false; btn.setAttribute('aria-expanded', 'true'); };
+  const closeMenu = () => { setShown(list, false); btn.setAttribute('aria-expanded', 'false'); };
+  const openMenu = () => { setShown(list, true); btn.setAttribute('aria-expanded', 'true'); };
   closeMenu();
 
   btn.addEventListener('click', e => {
@@ -1067,11 +1081,12 @@ function wireApp() {
   });
 
   // nawigacja mobilna
+  setShown($('#nav-scrim'), false);
   $('#nav-toggle').addEventListener('click', () => {
     const n = $('#nav');
     const open = n.dataset.open !== '1';
     n.dataset.open = open ? '1' : '0';
-    $('#nav-scrim').hidden = !open;
+    setShown($('#nav-scrim'), open);
   });
   $('#nav-scrim').addEventListener('click', closeNav);
 
