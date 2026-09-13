@@ -1023,18 +1023,23 @@ function importFile(input, fromGate) {
 function wireApp() {
   // menu
   const btn = $('#menu-btn'), list = $('#menu-list');
+  const closeMenu = () => { list.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+  const openMenu = () => { list.hidden = false; btn.setAttribute('aria-expanded', 'true'); };
+  closeMenu();
+
   btn.addEventListener('click', e => {
     e.stopPropagation();
-    const open = list.hidden;
-    list.hidden = !open;
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    list.hidden ? openMenu() : closeMenu();
   });
-  document.addEventListener('click', () => { list.hidden = true; btn.setAttribute('aria-expanded', 'false'); });
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !list.hidden) { closeMenu(); btn.focus(); }
+  });
   list.addEventListener('click', e => e.stopPropagation());
   list.addEventListener('click', e => {
-    const act = e.target.dataset && e.target.dataset.act;
+    const act = e.target.closest('[data-act]') && e.target.closest('[data-act]').dataset.act;
     if (!act) return;
-    list.hidden = true;
+    closeMenu();
     if (act === 'md') exportMD();
     if (act === 'json') exportJSON();
     if (act === 'print') { buildPrint(); setTimeout(() => window.print(), 60); }

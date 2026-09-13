@@ -91,15 +91,18 @@
         <span class="switch__text">Tryb prezentera</span>
       </label>
       <div class="menu">
-        <button id="menu-btn" class="btn btn--small" aria-haspopup="true" aria-expanded="false">Zapisz i eksportuj</button>
+        <button id="menu-btn" class="btn btn--small menu__btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-list">
+          Zapisz i eksportuj
+          <svg class="menu__caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <div id="menu-list" class="menu__list" hidden>
+          <p class="menu__group">Eksport</p>
           <button data-act="md">Kontekst dla AI (.md)</button>
           <button data-act="json">Plik stanu (.json)</button>
           <button data-act="print">Dokument dla klienta (PDF)</button>
-          <hr>
+          <p class="menu__group">Sesja</p>
           <label for="import-file" class="menu__file">Wczytaj plik stanu…</label>
           <input id="import-file" type="file" accept="application/json,.json" hidden>
-          <hr>
           <button data-act="lock">Zablokuj kodem</button>
           <button data-act="reset" class="menu__danger">Zamknij zeszyt</button>
         </div>

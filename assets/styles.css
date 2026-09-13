@@ -48,6 +48,10 @@
 
 *, *::before, *::after{ box-sizing: border-box; }
 
+/* KRYTYCZNE: atrybut `hidden` musi wygrywać z klasami, które ustawiają display.
+   Bez tego .gate, .app i menu renderują się mimo `hidden`. */
+[hidden]{ display: none !important; }
+
 html{ -webkit-text-size-adjust: 100%; }
 
 body{
@@ -98,13 +102,15 @@ a{ color: var(--accent); }
 /* =========================================================
    Ekran startowy
    ========================================================= */
+/* Treść startuje u góry. Centrowanie w 100vh wypychało kartę poza pierwszy ekran
+   wszędzie, gdzie viewport jest wyższy niż okno (osadzenie w ramce, wysokie monitory). */
 .gate{
   position: relative;
   z-index: 2;
-  min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 2rem 1.25rem;
+  justify-items: center;
+  align-content: start;
+  padding: clamp(1.5rem, 5vh, 3.5rem) 1.25rem 4rem;
 }
 .gate__card{
   width: min(60rem, 100%);
@@ -280,7 +286,7 @@ a{ color: var(--accent); }
 /* =========================================================
    Belka górna
    ========================================================= */
-.app{ position: relative; z-index: 2; min-height: 100vh; display: flex; flex-direction: column; }
+.app{ position: relative; z-index: 2; display: flex; flex-direction: column; }
 
 .topbar{
   position: sticky; top: 0; z-index: 40;
@@ -307,27 +313,43 @@ a{ color: var(--accent); }
 .savestate[data-dirty="1"]::before{ background: var(--warn); }
 
 .menu{ position: relative; }
+.menu__btn[aria-expanded="true"]{ background: var(--accent-wash); border-color: var(--accent-line); color: var(--accent-deep); }
+.menu__caret{ transition: transform .2s ease; margin-left: .1rem; }
+.menu__btn[aria-expanded="true"] .menu__caret{ transform: rotate(180deg); }
+
 .menu__list{
   position: absolute; right: 0; top: calc(100% + .5rem);
-  min-width: 15rem;
+  min-width: 16rem;
   background: var(--card);
   border: 1px solid var(--rule-strong);
   border-radius: var(--r);
   box-shadow: var(--shadow-md);
-  padding: .35rem;
+  padding: .3rem;
   display: flex; flex-direction: column;
+  animation: menuIn .16s cubic-bezier(.2,.7,.3,1) both;
+  transform-origin: top right;
 }
+@keyframes menuIn{
+  from{ opacity: 0; transform: translateY(-4px) scale(.985); }
+  to  { opacity: 1; transform: none; }
+}
+.menu__group{
+  font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-faint); margin: .5rem .6rem .2rem;
+}
+.menu__group:first-child{ margin-top: .25rem; }
 .menu__list button, .menu__file{
   text-align: left;
   font: inherit;
   font-size: .85rem;
-  padding: .5rem .6rem;
+  padding: .45rem .6rem;
   border: 0; background: none; color: var(--ink);
   border-radius: 2px; cursor: pointer;
+  transition: background .14s ease, color .14s ease;
 }
 .menu__list button:hover, .menu__file:hover{ background: var(--accent-wash); }
-.menu__list hr{ border: 0; border-top: 1px solid var(--rule-soft); margin: .35rem .2rem; }
 .menu__danger{ color: var(--stop) !important; }
+.menu__danger:hover{ background: var(--stop-wash) !important; }
 
 /* =========================================================
    Układ
@@ -336,10 +358,10 @@ a{ color: var(--accent); }
 
 .nav{
   position: sticky; top: 3.4rem;
-  height: calc(100vh - 3.4rem);
+  max-height: calc(100dvh - 4rem);
   overflow-y: auto;
   border-right: 1px solid var(--rule);
-  padding: 1.5rem 1rem 3rem;
+  padding: 1.5rem 1rem 2rem;
 }
 .nav__head{
   font-size: .65rem; letter-spacing: .16em; text-transform: uppercase;
@@ -390,7 +412,7 @@ a{ color: var(--accent); }
   .iconbtn{ display: inline-flex; }
   .nav{
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 60;
-    width: 17rem; height: 100vh;
+    width: 17rem; height: 100dvh; max-height: none;
     background: var(--paper);
     transform: translateX(-101%);
     transition: transform .22s ease;
@@ -662,9 +684,10 @@ body[data-presenter="1"] .disc{ display: none; }
    ========================================================= */
 .lock{
   position: relative; z-index: 3;
-  min-height: 100vh;
-  display: grid; place-items: center;
-  padding: 2rem 1.25rem;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: clamp(2rem, 8vh, 6rem) 1.25rem 4rem;
 }
 .lock__card{
   width: min(26rem, 100%);
